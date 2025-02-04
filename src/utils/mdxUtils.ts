@@ -16,6 +16,25 @@ function isMarkdownFile(fileName: string): boolean {
   return fileName.endsWith('.md');
 }
 
+function romanToNumber(roman: string): number {
+  const romanValues: { [key: string]: number } = {
+    'I': 1,
+    'II': 2,
+    'III': 3,
+    'IV': 4,
+    'V': 5,
+    'VI': 6,
+    'VII': 7,
+    'VIII': 8,
+    'IX': 9,
+    'X': 10,
+    'XI': 11,
+    'XII': 12,
+    'XIII': 13
+  };
+  return romanValues[roman] || 0;
+}
+
 export function getSortedRealidadesData(): RealidadeData[] {
   // Obtém nomes de arquivos em /posts
   const fileNames = fs.readdirSync(contentDirectory).filter(isMarkdownFile);
@@ -23,6 +42,9 @@ export function getSortedRealidadesData(): RealidadeData[] {
   const allRealidadesData = fileNames.map((fileName) => {
     // Remove ".md" do nome do arquivo para obter o slug
     const slug = fileName.replace(/\.md$/, "");
+
+    // Extrai o número romano do slug (assume formato nome-NUMERO.md)
+    const romanNumeral = slug.split('-').pop() || '';
 
     // Lê conteúdo do arquivo como string
     const fullPath = path.join(contentDirectory, fileName);
@@ -35,18 +57,25 @@ export function getSortedRealidadesData(): RealidadeData[] {
     return {
       slug,
       title: matterResult.data.title as string,
-      order: matterResult.data.order as number | undefined,
+      order: romanToNumber(romanNumeral),
       ...matterResult.data,
     } as RealidadeData;
   });
 
-  // Ordena as realidades por ordem
-  return allRealidadesData.sort((a, b) => (a.order || 0) - (b.order || 0));
+  // Ordena as realidades por ordem numérica (I -> XIII)
+  return allRealidadesData.sort((a, b) => {
+    const orderA = romanToNumber(a.slug.split('-').pop() || '');
+    const orderB = romanToNumber(b.slug.split('-').pop() || '');
+    return orderA - orderB;
+  });
 }
 
 export function getRealidadeBySlug(slug: string): RealidadeData & { content: string } {
   const fullPath = path.join(contentDirectory, `${slug}.md`);
   const fileContents = fs.readFileSync(fullPath, "utf8");
+
+  // Extrai o número romano do slug
+  const romanNumeral = slug.split('-').pop() || '';
 
   // Usa gray-matter para analisar os metadados
   const matterResult = matter(fileContents);
@@ -54,7 +83,7 @@ export function getRealidadeBySlug(slug: string): RealidadeData & { content: str
   return {
     slug,
     title: matterResult.data.title as string,
-    order: matterResult.data.order as number | undefined,
+    order: romanToNumber(romanNumeral),
     ...matterResult.data,
     content: matterResult.content,
   } as RealidadeData & { content: string };

@@ -12,7 +12,7 @@ const config: Config = {
         "das-xiii-purple": "#2f0247",
       },
       backgroundImage: {
-        "world-background": "url('/background.jpg')",
+        "world-background": "url('/images/background.jpg')",
       },
     },
   },
